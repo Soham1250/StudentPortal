@@ -1,12 +1,16 @@
+import 'dart:async'; // For the timer
 import 'package:flutter/material.dart';
 
 class SubjectWiseTestInterfaceScreen extends StatefulWidget {
   @override
-  _SubjectWiseTestInterfaceScreen createState() => _SubjectWiseTestInterfaceScreen();
+  _SubjectWiseTestInterfaceScreen createState() =>
+      _SubjectWiseTestInterfaceScreen();
 }
 
-class _SubjectWiseTestInterfaceScreen extends State<SubjectWiseTestInterfaceScreen> {
-  // List of questions, answers, and whether the question is marked for review
+class _SubjectWiseTestInterfaceScreen
+    extends State<SubjectWiseTestInterfaceScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   List<Map<String, dynamic>> questions = [
     {
       'question': 'What is the determinant of the matrix [[2, 3], [1, 4]]?',
@@ -18,9 +22,9 @@ class _SubjectWiseTestInterfaceScreen extends State<SubjectWiseTestInterfaceScre
     {
       'question': 'Which of the following is an identity matrix?',
       'options': [
+        '[[1, 0], [0, 1]]',
         '[[2, 0], [0, 2]]',
         '[[0, 1], [1, 0]]',
-        '[[1, 0], [0, 1]]',
         '[[1, 1], [1, 1]]'
       ],
       'correctAnswer': '[[1, 0], [0, 1]]',
@@ -29,13 +33,14 @@ class _SubjectWiseTestInterfaceScreen extends State<SubjectWiseTestInterfaceScre
     },
     {
       'question': 'What is the trace of the matrix [[1, 2], [3, 4]]?',
-      'options': ['4','5', '7', '6'],
+      'options': ['5', '4', '7', '6'],
       'correctAnswer': '5',
       'userAnswer': null,
       'markedForReview': false,
     },
     {
-      'question': 'Matrix A is 2x3 and Matrix B is 3x2. What is the size of the resulting matrix when A is multiplied by B?',
+      'question':
+          'Matrix A is 2x3 and Matrix B is 3x2. What is the size of the resulting matrix when A is multiplied by B?',
       'options': ['2x2', '2x3', '3x3', '3x2'],
       'correctAnswer': '2x2',
       'userAnswer': null,
@@ -51,9 +56,9 @@ class _SubjectWiseTestInterfaceScreen extends State<SubjectWiseTestInterfaceScre
     {
       'question': 'Which of the following is a scalar matrix?',
       'options': [
+        '[[3, 0], [0, 3]]',
         '[[2, 1], [1, 2]]',
         '[[1, 2], [2, 1]]',
-        '[[3, 0], [0, 3]]',
         '[[4, 0], [0, 2]]'
       ],
       'correctAnswer': '[[3, 0], [0, 3]]',
@@ -75,10 +80,10 @@ class _SubjectWiseTestInterfaceScreen extends State<SubjectWiseTestInterfaceScre
     {
       'question': 'What is the inverse of the matrix [[1, 0], [0, 1]]?',
       'options': [
+        '[[1, 0], [0, 1]]',
         '[[0, 1], [1, 0]]',
         '[[1, 1], [1, 1]]',
         'No inverse exists'
-        '[[1, 0], [0, 1]]',
       ],
       'correctAnswer': '[[1, 0], [0, 1]]',
       'userAnswer': null,
@@ -87,9 +92,9 @@ class _SubjectWiseTestInterfaceScreen extends State<SubjectWiseTestInterfaceScre
     {
       'question': 'Which matrix is a diagonal matrix?',
       'options': [
+        '[[2, 0], [0, 3]]',
         '[[1, 1], [1, 1]]',
         '[[0, 0], [0, 0]]',
-        '[[2, 0], [0, 3]]',
         '[[2, 3], [3, 2]]'
       ],
       'correctAnswer': '[[2, 0], [0, 3]]',
@@ -98,7 +103,7 @@ class _SubjectWiseTestInterfaceScreen extends State<SubjectWiseTestInterfaceScre
     },
     {
       'question': 'What is the rank of a 3x3 identity matrix?',
-      'options': ['1', '0', '2','3'],
+      'options': ['3', '1', '0', '2'],
       'correctAnswer': '3',
       'userAnswer': null,
       'markedForReview': false,
@@ -106,17 +111,45 @@ class _SubjectWiseTestInterfaceScreen extends State<SubjectWiseTestInterfaceScre
   ];
 
   int currentQuestionIndex = 0;
-
-  // Collect the selected answers
   List<String?> selectedAnswers = [];
+
+  Timer? _timer;
+  int _remainingTime = 20 * 60; // 20 minutes in seconds
 
   @override
   void initState() {
     super.initState();
     selectedAnswers = List<String?>.filled(questions.length, null);
+    startTimer();
   }
 
-  // Move to the next question
+  // Timer logic
+  void startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_remainingTime > 0) {
+        setState(() {
+          _remainingTime--;
+        });
+      } else {
+        timer.cancel();
+        submitTest(context, 'username', 'testId'); // Auto-submit test
+      }
+    });
+  }
+
+  // Convert remaining time to a formatted string (mm:ss)
+  String getFormattedTime() {
+    int minutes = _remainingTime ~/ 60;
+    int seconds = _remainingTime % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel(); // Cancel the timer when the widget is disposed
+    super.dispose();
+  }
+
   void nextQuestion() {
     if (currentQuestionIndex < questions.length - 1) {
       setState(() {
@@ -125,7 +158,6 @@ class _SubjectWiseTestInterfaceScreen extends State<SubjectWiseTestInterfaceScre
     }
   }
 
-  // Move to the previous question
   void previousQuestion() {
     if (currentQuestionIndex > 0) {
       setState(() {
@@ -134,7 +166,6 @@ class _SubjectWiseTestInterfaceScreen extends State<SubjectWiseTestInterfaceScre
     }
   }
 
-  // Mark or unmark the current question for review
   void toggleMarkForReview() {
     setState(() {
       questions[currentQuestionIndex]['markedForReview'] =
@@ -142,7 +173,6 @@ class _SubjectWiseTestInterfaceScreen extends State<SubjectWiseTestInterfaceScre
     });
   }
 
-  // Save the user's selected answer for the current question
   void answerQuestion(String selectedAnswer) {
     setState(() {
       questions[currentQuestionIndex]['userAnswer'] = selectedAnswer;
@@ -150,40 +180,110 @@ class _SubjectWiseTestInterfaceScreen extends State<SubjectWiseTestInterfaceScre
     });
   }
 
-  // Submit the test
   void submitTest(BuildContext context, String username, String testId) {
-    // Navigate to the test analysis screen with parameters
+    _timer?.cancel();
     Navigator.pushNamed(
       context,
       '/testanalysis',
       arguments: {
         'username': username,
         'testId': testId,
-        'answers': selectedAnswers, // Pass the list of selected answers
+        'answers': selectedAnswers,
       },
     );
   }
 
+  // Helper to return color based on question status
+  Color getQuestionStatusColor(int index) {
+    final question = questions[index];
+    if (question['userAnswer'] != null && question['markedForReview']) {
+      return Colors.purple; // Answered & Marked for Review
+    } else if (question['userAnswer'] != null) {
+      return Colors.green; // Answered
+    } else if (question['markedForReview']) {
+      return Colors.blue; // Marked for Review
+    } else {
+      return Colors.red; // Unanswered
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>?;
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, String>?;
     final String username = args?["username"] ?? "Unknown";
     final String testId = args?["testId"] ?? "Unknown";
 
     final currentQuestion = questions[currentQuestionIndex];
 
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
-        title: Text('Question ${currentQuestionIndex + 1} of ${questions.length}'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              'Answered: ${selectedAnswers.where((ans) => ans != null).length} / ${questions.length}',
-              style: const TextStyle(fontSize: 16),
-            ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(testId),
+            Text(getFormattedTime()), // Show the countdown timer
+          ],
+        ),
+      ),
+      endDrawer: Drawer(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Text('Questions Overview',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 5),
+                  itemCount: questions.length,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          currentQuestionIndex = index;
+                          Navigator.pop(context); // Close the drawer
+                        });
+                      },
+                      child: Container(
+                        margin: EdgeInsets.all(4.0),
+                        color: getQuestionStatusColor(
+                            index), // Color based on question status
+                        child: Center(
+                          child: Text('${index + 1}'),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              // Legend
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _legendItem(Colors.green, "Answered"),
+                        _legendItem(Colors.red, "Unanswered"),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _legendItem(Colors.purple, "Answered & Marked"),
+                        _legendItem(Colors.blue, "Marked for Review"),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -191,70 +291,121 @@ class _SubjectWiseTestInterfaceScreen extends State<SubjectWiseTestInterfaceScre
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Display the question
-            Text(
-              currentQuestion['question'],
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            Expanded(
+              flex: 3,
+              child: Center(
+                child: Text(
+                  currentQuestion['question'],
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
-            const SizedBox(height: 20),
 
             // Display the options as buttons
-            ...currentQuestion['options'].map<Widget>((option) {
-              return ElevatedButton(
-                onPressed: () => answerQuestion(option),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: currentQuestion['userAnswer'] == option
-                      ? Colors.green
-                      : null,
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+            Expanded(
+              flex: 5,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildOptionButton(currentQuestion['options'][0]),
+                      _buildOptionButton(currentQuestion['options'][1]),
+                    ],
                   ),
-                ),
-                child: Text(
-                  option,
-                  style: const TextStyle(fontSize: 18),
-                ),
-              );
-            }).toList(),
-            const SizedBox(height: 30),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildOptionButton(currentQuestion['options'][2]),
+                      _buildOptionButton(currentQuestion['options'][3]),
+                    ],
+                  ),
+                ],
+              ),
+            ),
 
             // Navigation and Mark for Review buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: previousQuestion,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
+            Expanded(
+              flex: 2,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton(
+                    onPressed: previousQuestion,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 15, horizontal: 25),
+                    ),
+                    child: const Text('< Back'),
                   ),
-                  child: const Text('< Back'),
-                ),
-                ElevatedButton(
-                  onPressed: toggleMarkForReview,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
+                  ElevatedButton(
+                    onPressed: toggleMarkForReview,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 15, horizontal: 25),
+                    ),
+                    child: Text(currentQuestion['markedForReview']
+                        ? 'Unmark'
+                        : 'Mark for Review'),
                   ),
-                  child: Text(currentQuestion['markedForReview']
-                      ? 'Unmark'
-                      : 'Mark for Review'),
-                ),
-                ElevatedButton(
-                  onPressed: currentQuestionIndex == questions.length - 1
-                      ? () => submitTest(context, username, testId)
-                      : nextQuestion,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
+                  ElevatedButton(
+                    onPressed: currentQuestionIndex == questions.length - 1
+                        ? () => submitTest(context, username, testId)
+                        : nextQuestion,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 15, horizontal: 25),
+                    ),
+                    child: Text(currentQuestionIndex == questions.length - 1
+                        ? 'Submit'
+                        : 'Next >'),
                   ),
-                  child: Text(currentQuestionIndex == questions.length - 1
-                      ? 'Submit'
-                      : 'Next >'),
-                ),
-              ],
+                ],
+              ),
             ),
-            const SizedBox(height: 10),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildOptionButton(String option) {
+    final currentQuestion = questions[currentQuestionIndex];
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.4, // Width 40% of the screen
+      child: ElevatedButton(
+        onPressed: () => answerQuestion(option),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          backgroundColor:
+              currentQuestion['userAnswer'] == option ? Colors.green : null,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: Text(
+          option,
+          style: const TextStyle(fontSize: 18),
+        ),
+      ),
+    );
+  }
+
+  Widget _legendItem(Color color, String text) {
+    return Row(
+      children: [
+        Container(
+          width: 15,
+          height: 15,
+          color: color,
+        ),
+        const SizedBox(width: 5),
+        Text(text),
+      ],
     );
   }
 }

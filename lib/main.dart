@@ -56,6 +56,7 @@ class StudentDashboardApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Student Dashboard',
       theme: ThemeData(
         primarySwatch: Colors.brown,
