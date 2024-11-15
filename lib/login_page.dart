@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -12,15 +14,38 @@ class _LoginPageState extends State<LoginPage> {
   bool _isPasswordVisible = false; // To toggle password visibility
 
   // This method will handle the login button press
-  void _login() {
+  void _login() async {
     final loginId = _loginController.text;
     final password = _passwordController.text;
 
-    if (loginId == 'lord' && password == 'pass123') {
-      Navigator.pushNamed(context, '/main', arguments: loginId);
-    } else {
+    // Prepare the API endpoint and request body
+    const url = 'https://cetprepapp-server.vercel.app/api/login';
+    final body = jsonEncode({
+      'Email': loginId,
+      'Password': password,
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+      // print(response.statusCode);
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        // print(responseData['FirstName']);
+        Navigator.pushNamed(context, '/main',
+            arguments: responseData['FirstName']);
+      } else {
+        setState(() {
+          _errorMessage = 'Server error. Please try again later.';
+        });
+      }
+    } catch (e) {
       setState(() {
-        _errorMessage = 'Invalid login credentials';
+        _errorMessage = 'An error occurred. Please check your connection.';
       });
     }
   }
@@ -64,7 +89,9 @@ class _LoginPageState extends State<LoginPage> {
                 border: OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                    _isPasswordVisible
+                        ? Icons.visibility
+                        : Icons.visibility_off,
                   ),
                   onPressed: () {
                     setState(() {
